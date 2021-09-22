@@ -1,0 +1,169 @@
+#!/bin/bash
+
+main () {
+        echo "Select 1 to open a port"
+        echo "Select 2 to close a port"
+        echo "Select 3 to see status of the UFW"
+        echo "Select 4 to exit this program"
+        read -r -n 1 -p "Which number do you choose?: " choice
+        case $choice in
+
+                1)
+                        clear
+                        open_port
+                        ;;
+                2)
+                        clear
+                        close_port
+                        ;;
+                3)
+                        clear
+                        status
+                        ;;
+                4)
+                        clear
+                        exit 1
+                        ;;
+                *)
+                        echo "You must select a number"
+                        read -n 1 -s -r -p "Push any key to try again"
+                        clear
+                        main
+                        ;;
+        esac
+}
+
+open_port () {
+        echo "You have selected to open a port"
+        echo "This will reduce security, do you want to continue?"
+        read -r -p "Yes or No?: " answer
+        case $answer in
+                [nN] | [nN][oO] )
+                        clear
+                        main
+                        ;;
+                [yY] | [yY][eE][sS] )
+                        read -r -p "Specify port to allow: " port
+                        while [ $port -gt 0 ] && [ $port -lt 65536 ]
+                                do
+                                ufw allow $port
+                                read -r -p "would you like to open another? Yes/No: " yno
+                                case $yno in
+                                        [yY] | [yY][eE][sS] )
+                                                read -r -p "Specify a port to allow:" port
+                                                ;;
+                                        * )
+                                                port=0
+                                                ;;
+                                esac
+                        done
+                        read -n 1 -s -r -p "Push any key to return to main menu"
+                        clear
+                        main
+                        ;;
+                * )
+                        echo "That was not a valid response"
+                        read -n 1 -s -r -p "Push any key to return to main menu"
+                        clear
+                        main
+                        ;;
+        esac
+}
+
+close_port () {
+        echo "You have selected to close a port"
+        echo "This will turn off functionality to a service"
+        read -r -p "Do you wish to continue? Yes/No: " answer
+        case $answer in
+                [nN] | [nN][oO] )
+                        clear
+                        main
+                        ;;
+                [yY] | [yY][eE][sS] )
+                        read -r -p "Specify port to block: " port
+                        while [ $port -gt 0 ] && [ $port -lt 65536 ]
+                                do
+                                ufw deny $port
+                                echo "$port has been closed"
+                                read -r -p "would you like to close another? Yes/No: " yno
+                                case $yno in
+                                        [yY] | [yY][eE][sS] )
+                                                read -r -p "Specify a port to close:" port
+                                                ;;
+                                        * )
+                                                port=0
+                                                ;;
+                                esac
+                        done
+                        read -n 1 -s -r -p "Push any key to return to main menu"
+                        clear
+                        main
+                        ;;
+                * )
+                        echo "That was not a valid response"
+                        read -n 1 -s -r -p "Push any key to return to main menu"
+                        clear
+                        main
+                        ;;
+        esac
+}
+
+status () {
+        echo "You have selected to read the current ufw settings"
+        read -r -p "Do you wish to continue? Yes/No: " answer
+        case $answer in
+                [nN] | [nN][oO] )
+                        clear
+                        main
+                        ;;
+                [yY] | [yY][eE][sS] )
+                        ufw status numbered
+                        read -r -p "Would you like to remove one of these rules?" remove
+                                while [ -n ${remove} ]
+                                        do
+                                        case $remove in
+                                                [yY] | [yY][eE][Ss] )
+                                                        read -r -p "Which rule would you like removed?" num
+                                                        while [ $num -gt 0 ]
+                                                                do
+                                                                ufw delete $num
+                                                                read -r -p "would you like to remove another? Yes/No: " yno
+                                                                case $yno in
+                                                                        [yY] | [yY][eE][sS] )
+                                                                                clear
+                                                                                ufw status numbered
+                                                                                read -r -p "Which rule would you like removed?" num
+                                                                                ;;
+                                                                        * )
+                                                                                num=0
+                                                                                clear
+                                                                                main
+                                                                                ;;
+                                                                esac
+                                                                done
+                                                        ;;
+                                                * )
+                                                        remove=""
+                                                        read -n 1 -s -r -p "Push any key to return to main menu"
+                                                        clear
+                                                        main
+                                                        ;;
+                                        esac
+                                        done                                                                                             
+                        clear
+                        main
+                        ;;
+                * )
+                        echo "That was not a valid response"
+                        read -n 1 -s -r -p "Push any key to return to main menu"
+                        clear
+                        main
+                        ;;
+        esac
+}
+
+if [[ $EUID -ne 0 ]]; then
+        echo "This script must be run as root"
+        exit 1
+fi
+main    
